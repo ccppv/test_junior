@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -45,3 +46,20 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'users.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'UNAUTHENTICATED_USER': None,
+}
+
+JWT_ACCESS_TOKEN_LIFETIME = timedelta(
+    minutes=int(os.getenv('JWT_ACCESS_TOKEN_LIFETIME_MINUTES', 60))
+)
+JWT_REFRESH_TOKEN_LIFETIME = timedelta(
+    days=int(os.getenv('JWT_REFRESH_TOKEN_LIFETIME_DAYS', 7))
+)

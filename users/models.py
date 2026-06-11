@@ -2,6 +2,7 @@ import hashlib
 import secrets
 
 from django.db import models
+from django.utils import timezone
 
 
 def hash_password(raw_password: str) -> str:
@@ -44,3 +45,24 @@ class User(models.Model):
 
     def check_password(self, raw_password: str) -> bool:
         return check_password(raw_password, self.password)
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
+
+class BlacklistedToken(models.Model):
+    jti = models.CharField(max_length=64, unique=True)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'blacklisted_tokens'
+
+    @classmethod
+    def cleanup_expired(cls):
+        cls.objects.filter(expires_at__lt=timezone.now()).delete()
