@@ -8,7 +8,12 @@ from rest_framework.views import APIView
 from users.jwt_service import JWTService
 from users.models import User
 from users.permissions import IsAuthenticated
-from users.serializers import LoginSerializer, RegisterSerializer, UserSerializer
+from users.serializers import (
+    LoginSerializer,
+    RegisterSerializer,
+    UserSerializer,
+    UserUpdateSerializer,
+)
 
 
 class RegisterView(APIView):
@@ -76,3 +81,40 @@ class LogoutView(APIView):
             pass
 
         return Response({'detail': 'Вы успешно вышли из системы'})
+
+
+class ProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        return Response(UserSerializer(request.user).data)
+
+    def patch(self, request):
+        serializer = UserUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(UserSerializer(request.user).data)
+
+
+class DeleteAccountView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        user = request.user
+        user.is_active = False
+        user.save(update_fields=['is_active', 'updated_at'])
+
+        auth_header = request.headers.get('Authorization', '')
+        if auth_header.startswith('Bearer '):
+            token = auth_header[7:]
+            try:
+                payload = JWTService.decode_token(token)
+                jti = payload.get('jti')
+                exp = payload.get('exp')
+                if jti and exp:
+                    expires_at = datetime.fromtimestamp(exp, tz=timezone.utc)
+                    JWTService.blacklist_token(jti, expires_at)
+            except Exception:
+                pass
+
+        return Response({'detail': 'Аккаунт деактивирован'})

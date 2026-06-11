@@ -52,3 +52,15 @@ class UserSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['id', 'is_active', 'created_at']
+
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'patronymic', 'email']
+
+    def validate_email(self, value):
+        user = self.instance
+        if User.objects.filter(email=value).exclude(id=user.id).exists():
+            raise serializers.ValidationError('Email уже используется')
+        return value
