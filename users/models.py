@@ -46,6 +46,16 @@ class User(models.Model):
     def check_password(self, raw_password: str) -> bool:
         return check_password(raw_password, self.password)
 
+    def get_roles(self):
+        return [ur.role for ur in self.user_roles.select_related('role')]
+
+    def has_permission(self, resource: str, action: str) -> bool:
+        for role in self.get_roles():
+            for perm in role.permissions.all():
+                if perm.resource == resource and perm.action == action:
+                    return True
+        return False
+
     @property
     def is_authenticated(self):
         return True

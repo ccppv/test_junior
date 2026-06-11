@@ -40,6 +40,8 @@ class LoginSerializer(serializers.Serializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    roles = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = [
@@ -50,8 +52,12 @@ class UserSerializer(serializers.ModelSerializer):
             'patronymic',
             'is_active',
             'created_at',
+            'roles',
         ]
-        read_only_fields = ['id', 'is_active', 'created_at']
+        read_only_fields = ['id', 'is_active', 'created_at', 'roles']
+
+    def get_roles(self, obj):
+        return [ur.role.name for ur in obj.user_roles.select_related('role')]
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
